@@ -25,6 +25,7 @@ app.get('/', (req, res) => res.send('API is running...'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/favorites', require('./routes/favorites'));
+app.use('/api/users', require('./routes/users'));
 // تحديد المنفذ (Port) الذي سيعمل عليه الخادم
 // سيتم استخدام المنفذ 5000 كافتراضي إذا لم يتم تعيينه في متغيرات البيئة
 const PORT = process.env.PORT || 5000;
