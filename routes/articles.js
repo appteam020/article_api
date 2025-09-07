@@ -8,21 +8,28 @@ const User = require('../models/User');
 
 // @route   POST api/articles
 // @desc    إنشاء مقال جديد
-// @access  Private (خاص - يتطلب تسجيل دخول)
+// @access  Private
 router.post('/', authMiddleware, async (req, res) => {
-  const { title, content } = req.body;
+  // تم إضافة category هنا
+  const { title, content, category } = req.body;
+
+  // التحقق من وجود الحقول المطلوبة
+  if (!title || !content || !category) {
+    return res.status(400).json({ msg: 'يرجى إدخال العنوان والمحتوى والتصنيف' });
+  }
 
   try {
-    // إنشاء مقال جديد وربطه بالمستخدم الذي سجل الدخول
-    // req.user.id يأتي من الـ middleware بعد التحقق من الـ token
     const newArticle = new Article({
       title,
       content,
+      category, // تم إضافة التصنيف
       user: req.user.id,
     });
 
     const article = await newArticle.save();
-    res.json(article);
+    // إرجاع المقال مع بيانات الناشر
+    const populatedArticle = await Article.findById(article._id).populate('user', 'name');
+    res.json(populatedArticle);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -30,37 +37,62 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // @route   GET api/articles
-// @desc    الحصول على كل المقالات
-// @access  Public (عام)
+// @desc    الحصول على كل المقالات مع اسم الناشر
+// @access  Public
 router.get('/', async (req, res) => {
   try {
-    // جلب كل المقالات وترتيبها حسب التاريخ (الأحدث أولاً)
-    const articles = await Article.find().sort({ date: -1 });
+    // تم تعديل الاستعلام ليشمل populate لجلب اسم الناشر وتصحيح حقل الترتيب
+    const articles = await Article.find()
+      .populate('user', 'name') // <-- جلب اسم الناشر
+      .sort({ createdAt: -1 }); // <-- الترتيب حسب تاريخ الإنشاء
     res.json(articles);
-  } catch (err) {
+  } catch (err)    {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
+
+// @route   GET api/articles/:id
+// @desc    الحصول على مقال واحد بواسطة ID
+// @access  Public
+router.get('/:id', async (req, res) => {
+    try {
+      const article = await Article.findById(req.params.id)
+        .populate('user', 'name'); // <-- جلب اسم الناشر
+  
+      if (!article) {
+        return res.status(404).json({ msg: 'المقال غير موجود' });
+      }
+  
+      res.json(article);
+    } catch (err) {
+      console.error(err.message);
+      // إذا كان الـ ID غير صالح، أرجع خطأ 404
+      if (err.kind === 'ObjectId') {
+        return res.status(404).json({ msg: 'المقال غير موجود' });
+      }
+      res.status(500).send('Server Error');
+    }
+  });
 
 
 // @route   PUT api/articles/:id
 // @desc    تحديث مقال
 // @access  Private
 router.put('/:id', authMiddleware, async (req, res) => {
-  const { title, content } = req.body;
+  // تم إضافة category هنا
+  const { title, content, category } = req.body;
 
-  // بناء كائن يحتوي على الحقول المراد تحديثها
   const articleFields = {};
   if (title) articleFields.title = title;
   if (content) articleFields.content = content;
+  if (category) articleFields.category = category; // <-- السماح بتحديث التصنيف
 
   try {
     let article = await Article.findById(req.params.id);
 
     if (!article) return res.status(404).json({ msg: 'المقال غير موجود' });
 
-    // التأكد من أن المستخدم الذي يحاول التعديل هو صاحب المقال
     if (article.user.toString() !== req.user.id) {
       return res.status(401).json({ msg: 'غير مصرح لك' });
     }
@@ -68,8 +100,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
     article = await Article.findByIdAndUpdate(
       req.params.id,
       { $set: articleFields },
-      { new: true } // لإرجاع النسخة المحدثة من المقال
-    );
+      { new: true }
+    ).populate('user', 'name'); // <-- إرجاع النسخة المحدثة مع اسم الناشر
 
     res.json(article);
   } catch (err) {
@@ -87,12 +119,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     if (!article) return res.status(404).json({ msg: 'المقال غير موجود' });
 
-    // التأكد من أن المستخدم الذي يحاول الحذف هو صاحب المقال
     if (article.user.toString() !== req.user.id) {
       return res.status(401).json({ msg: 'غير مصرح لك' });
     }
 
-    await Article.findByIdAndRemove(req.params.id);
+    // تم استخدام findByIdAndDelete بدلاً من findByIdAndRemove المهملة
+    await Article.findByIdAndDelete(req.params.id);
 
     res.json({ msg: 'تم حذف المقال بنجاح' });
   } catch (err) {
