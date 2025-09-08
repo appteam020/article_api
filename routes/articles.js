@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
 router.get('/myarticles', authMiddleware, async (req, res) => {
     try {
         // البحث عن المقالات بناءً على ID المستخدم المأخوذ من التوكن
-        const articles = await Article.find({ author: req.user.id }).sort({ createdAt: -1 });
+        const articles = await Article.find({ user: req.user.id }).sort({ createdAt: -1 });
         // إذا لم يجد مقالات لك، سيعيد قائمة فارغة [] وهذا طبيعي
         res.json(articles);
     } catch (err) {
@@ -65,6 +65,10 @@ router.get('/myarticles', authMiddleware, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
+
+
+
 // @route   GET api/articles/:id
 // @desc    الحصول على مقال واحد بواسطة ID
 // @access  Public
