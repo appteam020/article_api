@@ -22,7 +22,7 @@ const UserSchema = new mongoose.Schema({
   favorites: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Article' // يشير إلى أن المعرفات هنا تابعة لموديل المقالات
+            ref: 'article' // يشير إلى أن المعرفات هنا تابعة لموديل المقالات
         }
     ]
 });
