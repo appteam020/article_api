@@ -74,7 +74,20 @@ router.get('/:id', async (req, res) => {
       res.status(500).send('Server Error');
     }
   });
-
+// @route   GET /api/articles/myarticles
+// @desc    جلب المقالات التي كتبها المستخدم الحالي (اقتباساتي)
+// @access  Private
+router.get('/myarticles', authMiddleware, async (req, res) => {
+    try {
+        // البحث عن المقالات بناءً على ID المستخدم المأخوذ من التوكن
+        const articles = await Article.find({ author: req.user.id }).sort({ createdAt: -1 });
+        res.json(articles);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+// ==========================================================
 
 // @route   PUT api/articles/:id
 // @desc    تحديث مقال
@@ -133,20 +146,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 // ==========================================================
-// @route   GET /api/articles/myarticles
-// @desc    جلب المقالات التي كتبها المستخدم الحالي (اقتباساتي)
-// @access  Private
-router.get('/myarticles', authMiddleware, async (req, res) => {
-    try {
-        // البحث عن المقالات بناءً على ID المستخدم المأخوذ من التوكن
-        const articles = await Article.find({ author: req.user.id }).sort({ createdAt: -1 });
-        res.json(articles);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-// ==========================================================
+
 
 
 
