@@ -8,15 +8,22 @@ const auth = require('../middleware/auth');
 // @access  Private
 router.get('/me', auth, async (req, res) => {
     try {
-        //                       👇 هذا هو التعديل الأول
         const user = await User.findById(req.user.id)
             .select('-password')
-            .populate('favorites'); 
+            .populate({
+                path: 'favorites', // املأ حقل المفضلة
+                populate: {
+                    path: 'author', // بداخل كل عنصر مفضل، املأ حقل الكاتب
+                    select: 'name'  // واختر فقط اسم الكاتب
+                }
+            });
 
         if (!user) {
             return res.status(404).json({ msg: 'المستخدم غير موجود' });
         }
+        
         res.json(user);
+
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -78,7 +85,13 @@ router.get('/:id', auth, async (req, res) => {
         //                       👇 وهذا هو التعديل الثاني
         const user = await User.findById(req.params.id)
             .select('-password')
-            .populate('favorites');
+            .populate({
+                path: 'favorites', // املأ حقل المفضلة
+                populate: {
+                    path: 'author', // بداخل كل عنصر مفضل، املأ حقل الكاتب
+                    select: 'name'  // واختر فقط اسم الكاتب
+                }
+            });
 
         if (!user) {
             return res.status(404).json({ msg: 'المستخدم غير موجود' });
