@@ -54,10 +54,11 @@ router.get('/', async (req, res) => {
 // @route   GET /api/articles/myarticles
 // @desc    جلب المقالات التي كتبها المستخدم الحالي (اقتباساتي)
 // @access  Private
-router.get('/myarticles', authMiddleware, async (req, res) => {
+router.get('/myarticles', auth, async (req, res) => {
     try {
         // البحث عن المقالات بناءً على ID المستخدم المأخوذ من التوكن
         const articles = await Article.find({ author: req.user.id }).sort({ createdAt: -1 });
+        // إذا لم يجد مقالات لك، سيعيد قائمة فارغة [] وهذا طبيعي
         res.json(articles);
     } catch (err) {
         console.error(err.message);
