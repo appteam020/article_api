@@ -136,7 +136,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // @route   GET /api/articles/myarticles
 // @desc    جلب المقالات التي كتبها المستخدم الحالي (اقتباساتي)
 // @access  Private
-router.get('/myarticles', auth, async (req, res) => {
+router.get('/myarticles', authMiddleware, async (req, res) => {
     try {
         // البحث عن المقالات بناءً على ID المستخدم المأخوذ من التوكن
         const articles = await Article.find({ author: req.user.id }).sort({ createdAt: -1 });
