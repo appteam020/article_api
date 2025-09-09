@@ -62,7 +62,13 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
     try {
         // جلب المستخدم مع بيانات المقالات المفضلة كاملة باستخدام populate
-        const user = await User.findById(req.user.id).populate('favorites');
+            const user = await User.findById(req.user.id).populate({
+            path: 'favorites',
+            populate: {
+                path: 'user',
+                select: 'name' // <-- تم التعديل هنا لجلب الاسم فقط
+            }
+        });
 
         if (!user) {
             return res.status(404).json({ msg: 'المستخدم غير موجود' });
