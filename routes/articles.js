@@ -124,7 +124,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     res.json(article);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ msg: 'حدث خطأ في الخادم', error: err.message });
   }
 });
 
