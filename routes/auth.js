@@ -82,21 +82,24 @@ router.post('/login', async (req, res) => {
 
         // --- Start of Modifications ---
 
-        // 1. Define the expiration duration in seconds for clarity
-        // 5 hours * 60 minutes/hour * 60 seconds/minute = 18000 seconds
+        // 1. Define the expiration duration in seconds (5 hours)
         const expiresInSeconds = 18000;
+
+        // 2. Calculate the exact expiration Date object
+        // Get current time in milliseconds and add the duration
+        const expirationDate = new Date(Date.now() + expiresInSeconds * 1000);
 
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: expiresInSeconds }, // Use the duration in seconds
+            { expiresIn: expiresInSeconds },
             (err, token) => {
                 if (err) throw err;
 
-                // 2. Send both the token and the duration in the response
+                // 3. Send the token and the calculated expiration date
                 res.json({
                     token,
-                    expiresIn: expiresInSeconds
+                    expiresAt: expirationDate.toISOString() // Send as standard ISO string
                 });
             }
         );
