@@ -61,41 +61,51 @@ router.post('/register', async (req, res) => {
 // @desc    تسجيل دخول المستخدم
 // @access  Public (عام)
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+    const { email, password } = req.body;
 
-  try {
-    // 1. البحث عن المستخدم عن طريق البريد الإلكتروني
-    let user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ msg: 'بيانات الاعتماد غير صحيحة' });
+    try {
+        let user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ msg: 'بيانات الاعتماد غير صحيحة' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'بيانات الاعتماد غير صحيحة' });
+        }
+
+        const payload = {
+            user: {
+                id: user.id,
+            },
+        };
+
+        // --- Start of Modifications ---
+
+        // 1. Define the expiration duration in seconds for clarity
+        // 5 hours * 60 minutes/hour * 60 seconds/minute = 18000 seconds
+        const expiresInSeconds = 18000;
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: expiresInSeconds }, // Use the duration in seconds
+            (err, token) => {
+                if (err) throw err;
+
+                // 2. Send both the token and the duration in the response
+                res.json({
+                    token,
+                    expiresIn: expiresInSeconds
+                });
+            }
+        );
+        // --- End of Modifications ---
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
-
-    // 2. مقارنة كلمة المرور المدخلة مع الكلمة المشفرة في قاعدة البيانات
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'بيانات الاعتماد غير صحيحة' });
-    }
-
-    // 3. إذا كانت البيانات صحيحة، قم بإنشاء وإرجاع token
-    const payload = {
-      user: {
-        id: user.id,
-      },
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5h' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
 });
 
 module.exports = router;
