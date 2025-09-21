@@ -11,15 +11,15 @@ router.get('/me', auth, async (req, res) => {
         const user = await User.findById(req.user.id)
             .select('-password')
             .populate({
-                path: 'favorites', // املأ حقل المفضلة
+                path: 'favorites', // Populate the favorites array
                 populate: {
-                    path: 'author', // بداخل كل عنصر مفضل، املأ حقل الكاتب
-                    select: 'name'  // واختر فقط اسم الكاتب
+                    path: 'user', // <-- This is the corrected path (was 'author')
+                    select: 'name'  // Select only the name of the article's user (author)
                 }
             });
 
         if (!user) {
-            return res.status(404).json({ msg: 'المستخدم غير موجود' });
+            return res.status(404).json({ msg: 'User not found' });
         }
         
         res.json(user);
