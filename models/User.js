@@ -1,32 +1,45 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-// تعريف هيكل (Schema) بيانات المستخدم
 const UserSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true, // حقل الاسم مطلوب
-  },
-  email: {
-    type: String,
-    required: true, // حقل البريد الإلكتروني مطلوب
-    unique: true,   // يجب أن يكون البريد الإلكتروني فريداً لكل مستخدم
-  },
-  password: {
-    type: String,
-    required: true, // حقل كلمة المرور مطلوب
-  },
-  date: {
-    type: Date,
-    default: Date.now, // تاريخ التسجيل، يتم تعيينه تلقائياً
-  },
-  favorites: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'article' // يشير إلى أن المعرفات هنا تابعة لموديل المقالات
-        }
-    ]
+    name: {
+        type: String,
+        required: [true, 'Please provide a name'],
+    },
+    email: {
+        type: String,
+        required: [true, 'Please provide an email'],
+        unique: true,
+        lowercase: true,
+    },
+    password: {
+        type: String,
+        required: [true, 'Please provide a password'],
+        minlength: 8,
+    },
+    // Other fields like bio, avatar, favorites can be here
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'article'
+    }]
+}, { timestamps: true });
+
+// This hook hashes the password before saving the user
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
 });
 
-// تصدير الموديل (Model) الذي تم إنشاؤه من الـ Schema
-// سيتم إنشاء collection باسم "users" في قاعدة البيانات
+// ==========================================================
+// This is the function that was missing or incorrect
+// It adds the .matchPassword method to every user document
+// ==========================================================
+UserSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
 module.exports = mongoose.model('user', UserSchema);
