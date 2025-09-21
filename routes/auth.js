@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
-const bcrypt = require('bcryptjs'); // We'll need bcrypt for comparison
 
 // استيراد موديل المستخدم
 const User = require('../models/User');
