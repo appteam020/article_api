@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
+const bcrypt = require('bcryptjs'); // We'll need bcrypt for comparison
 
 // استيراد موديل المستخدم
 const User = require('../models/User');
@@ -110,5 +111,45 @@ router.post('/login', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+router.put('/changepassword', authMiddleware, async (req, res) => {
+    try {
+        // 1. Get old and new passwords from the request body
+        const { oldPassword, newPassword } = req.body;
 
+        // 2. Basic validation
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ msg: 'Please provide both old and new passwords' });
+        }
+
+        // It's good practice to check the new password's length
+        if (newPassword.length < 8) {
+            return res.status(400).json({ msg: 'New password must be at least 8 characters long' });
+        }
+
+        // 3. Find the user in the database
+        // The auth middleware gives us req.user, but it might not include the password.
+        // So, we fetch the user again to ensure we have the password hash.
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // 4. Verify the old password
+        const isMatch = await user.matchPassword(oldPassword);
+        if (!isMatch) {
+            return res.status(401).json({ msg: 'Incorrect old password' });
+        }
+
+        // 5. Hash the new password and save the user
+        // We can just assign the new password, and the pre-save hook in the User model will hash it automatically.
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ msg: 'Password changed successfully' });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 module.exports = router;
